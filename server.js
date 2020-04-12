@@ -16,6 +16,14 @@ server.use(cors(corsOptions));
 server.use(jsonServer.bodyParser);
 
 
+//* Login
+// @params body: { "email" : string, "password" : string }
+//
+// @example: {
+//             "email" : "example@mail.com",
+//             "password" : "qwerty123"
+//           }
+// */
 server.post('/login', (req, res) => {
   const user = db.users.find(user => user.email === req.body.email);
   if (user && user.password === req.body.password) {
@@ -24,6 +32,65 @@ server.post('/login', (req, res) => {
   res.status(400).json({message: 'Wrong credentials'});
 });
 
+
+//* Registration user
+// @params body: {
+//                "email" : string,
+//                "firstName" : string,
+//                "lastName" : string,
+//                "password" : string,
+//                "confirmPassword" : string
+//                }
+// @example: {
+//                "email" : "example@mail.com",
+//                "firstName" : "David",
+//                "lastName" : "Nelson",
+//                "password" : "password123",
+//                "confirmPassword" : "password123"
+//                }
+// */
+server.post('/signin', (req, res) => {
+  const user = db.users.find(user => user.email === req.body.email);
+
+  if (user) {
+    return res.status(400).json({message: 'User has already registered with that email'});
+  }
+
+  if (!req.body
+    || !req.body.email
+    || !req.body.lastName
+    || !req.body.firstName
+    || !req.body.password
+    || !req.body.confirmPassword) {
+    return res.status(400).json({message: 'Bad request'});
+  }
+
+  if (req.body.password !== req.body.confirmPassword) {
+    return res.status(400).json({message: 'Passwords not match'});
+  }
+
+  const newUser = {
+    email: req.body.email,
+    lastName: req.body.lastName,
+    firstName: req.body.firstName,
+    password: req.body.password,
+    basket: [],
+  };
+  router.db.get('users').push(newUser).write();
+  return res.status(200).json({message: 'User was registered success'});
+});
+
+
+//* Add gods to basket
+// @params body: {"email" : string, "your_field" : object }
+// @example: {
+//            "email" : "example@mail.com",
+//            "your_field" :  {
+//                             "id": 123456,
+//                             "brand": "Audi"
+//                            }
+//           }
+// */
 server.post('/add-to-basket', (req, res) => {
   const index = db.users.findIndex(user => user.email === req.body.email);
   if (index < 0) {
@@ -33,12 +100,20 @@ server.post('/add-to-basket', (req, res) => {
     .get('users')
     .get(index)
     .get('basket')
-    .push(req.body.car)
+    .push(req.body.your_field) // you should change property "your_field" to your field name
     .write();
 
   res.status(200).json({user: router.db.get('users').get(index)})
 });
 
+
+//* Remove gods to basket
+// @params body: {"email" : string, "your_field_id" : string | number}
+// @example: {
+//            "email" : "example@mail.com",
+//            "your_field_id" :  12345
+//           }
+// */
 server.post('/remove-from-basket', (req, res) => {
   const userIndex = db.users.findIndex(user => user.email === req.body.email);
   if (userIndex < 0) {
@@ -48,7 +123,7 @@ server.post('/remove-from-basket', (req, res) => {
     .get('users')
     .get(userIndex)
     .get('basket')
-    .findIndex(car => car.id.toString() === req.body.id.toString());
+    .findIndex(item => item.id.toString() === req.body.your_field_id.toString()); // you should change property "your_field" to your field id name
 
   if (carIndex < 0) {
     res.status(400).json({message: 'Bad request'});
@@ -62,35 +137,6 @@ server.post('/remove-from-basket', (req, res) => {
     .write();
 
   res.status(200).json({test: router.db.get('users').get(userIndex)});
-});
-
-
-server.post('/signin', (req, res) => {
-  const user = db.users.find(user => user.email === req.body.email);
-  if (!req.body
-    || !req.body.email
-    || !req.body.lastName
-    || !req.body.firstName
-    || !req.body.password
-    || !req.body.confirmPassword) {
-    res.status(400).json({message: 'Bad request'});
-  }
-
-  if (req.body.password !== req.body.confirmPassword) {
-    res.status(400).json({message: 'Passwords not match'});
-  }
-
-  if (!user) {
-    const newUser = {
-      email: req.body.email,
-      lastName: req.body.lastName,
-      firstName: req.body.firstName,
-      password: req.body.password,
-    };
-    router.db.get('users').push(newUser).write();
-    res.status(200).json({message: 'User was registered success'});
-  }
-  res.status(400).json({message: 'User has already registered with that email'});
 });
 
 server.use(middlewares);
