@@ -119,13 +119,13 @@ server.post('/remove-from-basket', (req, res) => {
   if (userIndex < 0) {
     res.status(400).json({message: 'Bad request'});
   }
-  const carIndex = router.db
+  const yourFieldIndex = router.db
     .get('users')
     .get(userIndex)
     .get('basket')
     .findIndex(item => item.id.toString() === req.body.your_field_id.toString()); // you should change property "your_field" to your field id name
 
-  if (carIndex < 0) {
+  if (yourFieldIndex < 0) {
     res.status(400).json({message: 'Bad request'});
   }
 
@@ -133,7 +133,7 @@ server.post('/remove-from-basket', (req, res) => {
     .get('users')
     .get(userIndex)
     .get('basket')
-    .splice(carIndex, 1)
+    .splice(yourFieldIndex, 1)
     .write();
 
   res.status(200).json({test: router.db.get('users').get(userIndex)});
