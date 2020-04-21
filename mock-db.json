@@ -1973,7 +1973,15 @@
       "lastName": "Qwerty",
       "firstName": "QWERTY",
       "password": "qwerty123",
-      "basket": []
+      "basket": [
+        {
+          "your_field": {
+            "id": 1123,
+            "brand": "Ford"
+          },
+          "quantity": 5
+        }
+      ]
     }
   ]
 }

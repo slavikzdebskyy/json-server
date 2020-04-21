@@ -82,61 +82,81 @@ server.post('/signin', (req, res) => {
 
 
 //* Add gods to basket
-// @params body: {"email" : string, "your_field" : object }
+// @params body: {email : string, your_field : object, quantity?: number }
 // @example: {
 //            "email" : "example@mail.com",
 //            "your_field" :  {
 //                             "id": 123456,
 //                             "brand": "Audi"
-//                            }
+//                            },
+//            "quantity": 1,
 //           }
 // */
 server.post('/add-to-basket', (req, res) => {
-  const index = db.users.findIndex(user => user.email === req.body.email);
-  if (index < 0) {
-    res.status(400).json({message: 'Bad request'});
-  }
-  router.db
-    .get('users')
-    .get(index)
-    .get('basket')
-    .push(req.body.your_field) // you should change property "your_field" to your field name
-    .write();
+  try {
+    const index = db.users.findIndex(user => user.email === req.body.email);
 
-  res.status(200).json({user: router.db.get('users').get(index)})
+    if (index < 0) {
+      return res.status(400).json({message: 'Bad request'});
+    }
+    const basket = [...router.db.get('users').get(index).get('basket')];
+    const length = basket.length;
+    const quantity = req.body.quantity || 1;
+    const indx = basket.findIndex(item => item.your_field.id === req.body.your_field.id); // you should change property "your_field" to your field name
+
+    if (indx >= 0) {
+      basket[indx].quantity += quantity;
+    } else {
+      basket.push({your_field: req.body.your_field, quantity}); // you should change property "your_field" to your field name
+    }
+
+    router.db.get('users').get(index).get('basket').splice(0,length).write();
+    router.db.get('users').get(index).get('basket').push(...basket).write();
+
+    return res.status(200).json({basket: router.db.get('users').get(index).get('basket')})
+  } catch(error) {
+    return res.status(500).json({error})
+  }
 });
 
 
 //* Remove gods to basket
-// @params body: {"email" : string, "your_field_id" : string | number}
+// @params body: {email : string, your_field_id : string | number, quantity?: number}
 // @example: {
 //            "email" : "example@mail.com",
-//            "your_field_id" :  12345
+//            "your_field_id" :  12345,
+//            "quantity": 1,
 //           }
 // */
 server.post('/remove-from-basket', (req, res) => {
-  const userIndex = db.users.findIndex(user => user.email === req.body.email);
-  if (userIndex < 0) {
-    res.status(400).json({message: 'Bad request'});
+  try {
+    const userIndex = db.users.findIndex(user => user.email === req.body.email);
+    if (userIndex < 0) {
+      return res.status(400).json({message: 'Bad request'});
+    }
+
+    const basket = [...router.db.get('users').get(userIndex).get('basket')];
+    const length = basket.length;
+    const quantity = req.body.quantity || 1;
+    const index = basket.findIndex(item => item.your_field.id.toString() === req.body.your_field_id.toString()); // you should change property "your_field" to your field id name
+
+    if (index < 0) {
+      return res.status(400).json({message: 'Bad request'});
+    }
+
+    if (basket[index].quantity <= quantity) {
+      basket.splice(index, 1);
+    } else {
+      basket[index].quantity -= quantity;
+    }
+
+    router.db.get('users').get(userIndex).get('basket').splice(0, length).write();
+    router.db.get('users').get(userIndex).get('basket').push(...basket).write();
+
+    return res.status(200).json({basket: router.db.get('users').get(userIndex).get('basket')});
+  } catch(error) {
+    return res.status(500).json({error})
   }
-  const yourFieldIndex = router.db
-    .get('users')
-    .get(userIndex)
-    .get('basket')
-    .findIndex(item => item.id.toString() === req.body.your_field_id.toString()); // you should change property "your_field" to your field id name
-
-  if (yourFieldIndex < 0) {
-    res.status(400).json({message: 'Bad request'});
-  }
-
-  router.db
-    .get('users')
-    .get(userIndex)
-    .get('basket')
-    .splice(yourFieldIndex, 1)
-    .write();
-
-  res.status(200).json({test: router.db.get('users').get(userIndex)});
 });
 
 server.use(middlewares);
