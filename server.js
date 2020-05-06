@@ -89,9 +89,10 @@ server.post('/signin', (req, res) => {
 //                             "id": 123456,
 //                             "brand": "Audi"
 //                            },
-//            "quantity": 1,
+//            "quantity": 1
 //           }
 // */
+
 server.post('/add-to-basket', (req, res) => {
   try {
     const index = db.users.findIndex(user => user.email === req.body.email);
@@ -102,12 +103,12 @@ server.post('/add-to-basket', (req, res) => {
     const basket = [...router.db.get('users').get(index).get('basket')];
     const length = basket.length;
     const quantity = req.body.quantity || 1;
-    const indx = basket.findIndex(item => item.your_field.id === req.body.your_field.id); // you should change property "your_field" to your field name
+    const indx = basket.findIndex(item => item.shirt.id === req.body.shirt.id); // you should change property "your_field" to your field name
 
     if (indx >= 0) {
       basket[indx].quantity += quantity;
     } else {
-      basket.push({your_field: req.body.your_field, quantity}); // you should change property "your_field" to your field name
+      basket.push({shirt: req.body.shirt, quantity}); // you should change property "your_field" to your field name
     }
 
     router.db.get('users').get(index).get('basket').splice(0,length).write();
@@ -117,15 +118,16 @@ server.post('/add-to-basket', (req, res) => {
   } catch(error) {
     return res.status(500).json({error})
   }
+  
 });
 
 
 //* Remove gods to basket
-// @params body: {email : string, your_field_id : string | number, quantity?: number}
+// @params body: {email : string, your_field : object, quantity?: number }
 // @example: {
 //            "email" : "example@mail.com",
 //            "your_field_id" :  12345,
-//            "quantity": 1,
+//            "quantity" : 1, 
 //           }
 // */
 server.post('/remove-from-basket', (req, res) => {
@@ -134,11 +136,13 @@ server.post('/remove-from-basket', (req, res) => {
     if (userIndex < 0) {
       return res.status(400).json({message: 'Bad request'});
     }
+    
 
     const basket = [...router.db.get('users').get(userIndex).get('basket')];
     const length = basket.length;
     const quantity = req.body.quantity || 1;
-    const index = basket.findIndex(item => item.your_field.id.toString() === req.body.your_field_id.toString()); // you should change property "your_field" to your field id name
+    // return res.json(basket)
+    const index = basket.findIndex(item => item.shirt.id.toString() === req.body.shirt_id.toString()); // you should change property "your_field" to your field id name
 
     if (index < 0) {
       return res.status(400).json({message: 'Bad request'});
@@ -157,6 +161,7 @@ server.post('/remove-from-basket', (req, res) => {
   } catch(error) {
     return res.status(500).json({error})
   }
+  
 });
 
 server.use(middlewares);
